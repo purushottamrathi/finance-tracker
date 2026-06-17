@@ -13,10 +13,24 @@ const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd) {
+  // When behind a reverse proxy (nginx, load balancer), enable trust proxy
+  app.set('trust proxy', 1);
+}
+
+console.log('Starting server in', process.env.NODE_ENV || 'development', 'mode');
+
 app.use(helmet());
 app.use(express.json());
+const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(s => s.trim());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // allow server-to-server or tools with no origin
+    if (!origin) return callback(null, true);
+    if (clientOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
   credentials: true,
 }));
 
