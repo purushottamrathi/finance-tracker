@@ -42,8 +42,9 @@ function isOriginAllowed(origin) {
 }
 
 app.use(cors({
-  origin: true,
-  credentials: true
+    origin: `${process.env.CLIENT_URL}`,
+    methods: "GET, POST, PUT, DELETE",
+    credentials: true
 }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
