@@ -42,13 +42,8 @@ function isOriginAllowed(origin) {
 }
 
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = isOriginAllowed(origin);
-    if (allowed) return callback(null, true);
-    console.warn('Blocked CORS origin:', origin);
-    return callback(new Error('CORS policy: origin not allowed'));
-  },
-  credentials: true,
+  origin: true,
+  credentials: true
 }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
