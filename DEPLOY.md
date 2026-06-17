@@ -1,3 +1,27 @@
+# Deployment Checklist
+
+Before deploying to production, verify:
+
+- `NODE_ENV=production` and `MONGODB_URI` are set to production values.
+- `CLIENT_URL` contains the exact frontend origin(s) for CORS (include `https://`).
+- `JWT_SECRET` is set and kept secret.
+- Build frontend and serve static files from the same root or ensure `sw.js` is served from `/sw.js` at site root.
+
+Recommended steps
+
+```bash
+# Build frontend
+cd frontend
+npm install
+npm run build
+
+# On server or host, serve built frontend and start backend
+cd backend
+npm install --production
+NODE_ENV=production node server.js
+```
+
+If using a platform (Vercel/Netlify for frontend, Heroku/DigitalOcean for backend), ensure the service worker file and manifest are deployed at the root path. Vercel sometimes serves app from a subpath — set `NEXT_PUBLIC_BASE_PATH` and ensure SW scope matches.
 # Deploy checklist — keep local and production separate
 
 1) Prepare env for production

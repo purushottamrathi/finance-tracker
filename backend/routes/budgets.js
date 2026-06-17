@@ -11,7 +11,8 @@ router.get('/', async (req, res, next) => {
   try {
     const { month, year } = req.query;
     const now = new Date();
-    const m = month !== undefined ? parseInt(month) : now.getMonth();
+    // Incoming `month` query param is 1-based (1..12). Service expects 0-based month.
+    const m = month !== undefined ? parseInt(month) - 1 : now.getMonth();
     const y = year ? parseInt(year) : now.getFullYear();
     const budgets = await getAllBudgetsWithUsage(req.user._id, m, y);
     res.json(budgets.filter(Boolean));

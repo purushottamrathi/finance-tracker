@@ -18,10 +18,22 @@ export default function PWAInstall({ variant = 'sidebar' }: Props) {
     typeof window !== 'undefined' && Boolean(localStorage.getItem('pwa-installed'))
   );
 
+  // iOS fallback dismissal flag
+  const [iosDismissed, setIosDismissed] = useState(() =>
+    typeof window !== 'undefined' && Boolean(localStorage.getItem('pwa-ios-dismissed'))
+  );
+
+  const isIOS = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
+
   useEffect(() => {
     if (hidden) return;
     const handler = (e: Event) => {
       e.preventDefault();
+      try {
+        // expose for debugging
+        // @ts-ignore
+        window.__deferredPWAEvent = e;
+      } catch {}
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handler);
@@ -39,7 +51,58 @@ export default function PWAInstall({ variant = 'sidebar' }: Props) {
     setHidden(true);
   };
 
-  if (!deferredPrompt || hidden) return null;
+  const handleIosDismiss = () => {
+    if (typeof window !== 'undefined') localStorage.setItem('pwa-ios-dismissed', '1');
+    setIosDismissed(true);
+  };
+
+  if (hidden) return null;
+
+  // iOS: show manual instructions when beforeinstallprompt isn't available
+  if (isIOS && !deferredPrompt && !iosDismissed) {
+    if (variant === 'sidebar') {
+      return (
+        <div className="text-xs px-3 py-2.5 rounded-xl bg-yellow-50 text-yellow-800">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="font-medium">Install FinTracker</div>
+              <div className="text-[11px]">Tap Share → Add to Home Screen</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleIosDismiss}
+                className="text-xs text-yellow-600 px-2 py-1 rounded"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mx-4 mb-2 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-yellow-900">Install FinTracker</p>
+          <p className="text-xs text-yellow-700 mt-0.5">Open Share → Add to Home Screen</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleIosDismiss}
+            className="text-xs text-yellow-600 hover:text-yellow-800 px-2 py-1"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-iOS: only show when the beforeinstallprompt event is available
+  if (!deferredPrompt) return null;
 
   if (variant === 'sidebar') {
     return (

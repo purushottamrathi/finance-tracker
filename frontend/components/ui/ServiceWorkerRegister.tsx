@@ -10,9 +10,21 @@ export default function ServiceWorkerRegister() {
         const base = publicBase ? publicBase.replace(/\/$/, '') : '';
         const swPath = base ? `${base}/sw.js` : '/sw.js';
         const scope = base || '/';
-        navigator.serviceWorker.register(swPath, { scope }).catch(() => {});
+        console.debug('[SW] registering', { swPath, scope });
+        navigator.serviceWorker
+          .register(swPath, { scope })
+          .then((reg) => {
+            console.debug('[SW] registered', reg);
+            // show whether a controller is active
+            console.debug('[SW] controller', !!navigator.serviceWorker.controller);
+          })
+          .catch((err) => {
+            console.warn('[SW] registration failed', err);
+          });
       } catch (e) {
         // ignore registration errors in older browsers
+        // eslint-disable-next-line no-console
+        console.warn('[SW] registration error', e);
       }
     }
   }, []);
