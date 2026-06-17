@@ -24,6 +24,9 @@ router.put('/', async (req, res, next) => {
     const update = {};
     if (startingBalance !== undefined) update.startingBalance = Number(startingBalance);
     if (monthlyBudget !== undefined) update.monthlyBudget = Number(monthlyBudget);
+    if (req.body.dashboardLayout !== undefined && Array.isArray(req.body.dashboardLayout)) {
+      update.dashboardLayout = req.body.dashboardLayout.map(String);
+    }
 
     const settings = await UserSettings.findOneAndUpdate(
       { user: req.user._id },

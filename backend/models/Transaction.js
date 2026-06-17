@@ -23,6 +23,7 @@ const transactionSchema = new mongoose.Schema({
   type: { type: String, enum: TYPES, required: true },
   category: { type: String, enum: CATEGORIES, required: true },
   paymentMethod: { type: String, enum: PAYMENT_METHODS, required: true },
+  account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true, default: '' },
   isRecurring: { type: Boolean, default: false },

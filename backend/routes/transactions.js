@@ -84,6 +84,7 @@ router.post('/', async (req, res, next) => {
     const transaction = await Transaction.create({
       user: req.user._id,
       title, amount, type, category, paymentMethod,
+      account: req.body.account || null,
       date: date || new Date(),
       notes,
       isRecurring: isRecurring || false,
@@ -96,6 +97,38 @@ router.post('/', async (req, res, next) => {
     const now = new Date();
     const budgetUsage = await getBudgetUsage(req.user._id, category, now.getMonth(), now.getFullYear());
     if (budgetUsage) budgetWarning = budgetUsage;
+
+    // Update account balance if provided
+    try {
+      if (transaction.account) {
+        const Account = require('../models/Account');
+        const acc = await Account.findById(transaction.account);
+        if (acc) {
+          // income increases, expenses decrease; investments treated as outflow (money moved to investment account assumed separate)
+          const sign = ['income'].includes(transaction.type) ? 1 : -1;
+          acc.balance = (acc.balance || 0) + sign * transaction.amount;
+          await acc.save();
+        }
+      }
+    } catch (e) { console.warn('Account update failed', e); }
+
+    // Update investment streaks
+    try {
+      const Streak = require('../models/Streak');
+      if (['investment','savings'].includes(transaction.type)) {
+        const name = 'monthly-invest';
+        const now = new Date();
+        let s = await Streak.findOne({ user: req.user._id, name });
+        if (!s) s = await Streak.create({ user: req.user._id, name, current: 0, best: 0, lastDate: null });
+        // if lastDate is previous month (or same month) increment, else reset
+        const last = s.lastDate ? new Date(s.lastDate) : null;
+        const isSameOrPrevMonth = last && ( (now.getFullYear() === last.getFullYear() && now.getMonth() === last.getMonth()) || (now.getFullYear() === last.getFullYear() && now.getMonth() === last.getMonth() + 1) || (now.getFullYear() === last.getFullYear()+1 && last.getMonth()===11 && now.getMonth()===0) );
+        if (isSameOrPrevMonth) s.current = s.current + 1; else s.current = 1;
+        s.lastDate = now;
+        if (s.current > s.best) s.best = s.current;
+        await s.save();
+      }
+    } catch (e) { console.warn('Streak update failed', e); }
 
     res.status(201).json({ transaction, budgetWarning });
   } catch (err) { next(err); }

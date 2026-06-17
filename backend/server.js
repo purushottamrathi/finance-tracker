@@ -1,16 +1,24 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const startRecurringJob = require('./jobs/recurringTransactions');
+const startMilestoneChecker = require('./jobs/milestoneChecker');
+const startReminderDispatcher = require('./jobs/reminderDispatcher');
 
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const budgetRoutes = require('./routes/budgets');
 const settingsRoutes = require('./routes/settings');
 const healthRoutes = require('./routes/health');
+const accountsRoutes = require('./routes/accounts');
+const recommendationsRoutes = require('./routes/recommendations');
+const simulationsRoutes = require('./routes/simulations');
+const milestonesRoutes = require('./routes/milestones');
+const remindersRoutes = require('./routes/reminders');
 
 const app = express();
 
@@ -56,6 +64,11 @@ app.use('/api/analytics', apiLimiter, transactionRoutes);
 app.use('/api/budgets', apiLimiter, budgetRoutes);
 app.use('/api/settings', apiLimiter, settingsRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/accounts', apiLimiter, accountsRoutes);
+app.use('/api/recommendations', apiLimiter, recommendationsRoutes);
+app.use('/api/simulations', apiLimiter, simulationsRoutes);
+app.use('/api/milestones', apiLimiter, milestonesRoutes);
+app.use('/api/reminders', apiLimiter, remindersRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -74,5 +87,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB connected');
     startRecurringJob();
+    startMilestoneChecker();
+    startReminderDispatcher();
   })
   .catch(err => { console.error('DB connection failed:', err); process.exit(1); });
