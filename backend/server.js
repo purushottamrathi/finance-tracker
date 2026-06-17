@@ -10,13 +10,44 @@ const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const budgetRoutes = require('./routes/budgets');
 const settingsRoutes = require('./routes/settings');
+const healthRoutes = require('./routes/health');
 
 const app = express();
 
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd) {
+  // When behind a reverse proxy (nginx, load balancer), enable trust proxy
+  app.set('trust proxy', 1);
+}
+
+console.log('Starting server in', process.env.NODE_ENV || 'development', 'mode');
+
 app.use(helmet());
 app.use(express.json());
+const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function isOriginAllowed(origin) {
+  if (!origin) return true; // allow server-to-server requests
+  if (clientOrigins.includes(origin)) return true;
+  for (const o of clientOrigins) {
+    if (o === '*') return true;
+    // support entries like '.vercel.app' or '*.vercel.app' to match subdomains
+    if (o.startsWith('*.') && origin.endsWith(o.slice(1))) return true;
+    if (o.startsWith('.') && origin.endsWith(o)) return true;
+  }
+  return false;
+}
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    const allowed = isOriginAllowed(origin);
+    if (allowed) return callback(null, true);
+    console.warn('Blocked CORS origin:', origin);
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
   credentials: true,
 }));
 
@@ -28,6 +59,7 @@ app.use('/api/transactions', apiLimiter, transactionRoutes);
 app.use('/api/analytics', apiLimiter, transactionRoutes);
 app.use('/api/budgets', apiLimiter, budgetRoutes);
 app.use('/api/settings', apiLimiter, settingsRoutes);
+app.use('/api/health', healthRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
