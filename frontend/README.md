@@ -1,3 +1,31 @@
+# Frontend — Next.js (FinTracker)
+
+Local development
+
+1. Install dependencies and run dev server:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+2. Open the app in the browser. Development port may be `3000` or the next free port.
+
+Configuration
+- `NEXT_PUBLIC_API_URL` — optional. Defaults to `${window.location.origin}/api` when not set. For local backend use `http://localhost:5000/api`.
+
+PWA / service worker
+- Manifest: `public/manifest.json` (ensure `start_url` and `scope` are correct).
+- Service worker: `public/sw.js` and registration in `components/ui/ServiceWorkerRegister.tsx`.
+- Debug: use the `DebugInstallButton` (rendered in layout) or `window.__deferredPWAEvent` in console to trigger install flow.
+
+Common commands
+- `npm run build` — build for production
+- `npm run start` — start built app (after build)
+
+Notes
+- The frontend includes client-side throttling and backoff for `429` responses in `lib/api.ts`. For local dev testing, you can clear `localStorage` keys: `api-cooldown-until`, `pwa-installed`, `pwa-ios-dismissed`.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
