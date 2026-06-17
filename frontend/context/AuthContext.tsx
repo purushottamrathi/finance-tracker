@@ -20,7 +20,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('finance_token');
     const user = localStorage.getItem('finance_user');
     if (token && user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState({ user: JSON.parse(user), loading: false });
     } else {
       setState({ user: null, loading: false });
